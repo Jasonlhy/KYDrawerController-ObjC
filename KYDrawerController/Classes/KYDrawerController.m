@@ -93,11 +93,31 @@ static NSTimeInterval const kDrawerAnimationDuration = 0.25;
     [self.view addGestureRecognizer:self.screenEdgePanGesture];
     [self.view addGestureRecognizer:self.panGesture];
     [self.view addSubview:self.containerView];
-    [self.view
-        addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[_containerView]-0-|" options:kNilOptions metrics:nil views:viewDictionary]];
-    [self.view
-        addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[_containerView]-0-|" options:kNilOptions metrics:nil views:viewDictionary]];
-
+    
+    // Align the container view with iPhone X safe area or top layout guide
+    if (@available(iOS 11.0, *)){
+        UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
+        viewDictionary = NSDictionaryOfVariableBindings (_containerView, safe);
+        
+        [self.view
+         addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[_containerView]-0-|" options:kNilOptions metrics:nil views:viewDictionary]];
+        [NSLayoutConstraint activateConstraints:@[
+                                                  [_containerView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
+                                                  [_containerView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
+                                                  ]];
+    } else {
+        // iOS 9 - 10 align top layout guide
+        id topGuide = self.topLayoutGuide;
+        NSDictionary *viewsDictionary = NSDictionaryOfVariableBindings (_containerView, topGuide);
+        
+        [self.view
+         addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[_containerView]-0-|" options:kNilOptions metrics:nil views:viewDictionary]];
+        [self.view addConstraints:
+         [NSLayoutConstraint constraintsWithVisualFormat: @"V:[topGuide]-0-[_containerView]-0-|"
+                                                 options: 0
+                                                 metrics: nil
+                                                   views: viewsDictionary]];
+    }
     self.containerView.hidden = YES;
     
     if (self.mainSegueIdentifier) {
